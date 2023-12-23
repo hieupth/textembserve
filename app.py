@@ -34,10 +34,10 @@ app = FastAPI()
 
 @app.post("/")
 async def predict(mess: str):
-  tokenized = tokenizer(mess, return_tenros="np")
-  inputs = {
-    "input_ids": np.array(tokenized["input_ids"], dtype=np.int64),
-    "token_type_ids": np.array(tokenized["token_type_ids"], dtype=np.int64),
-    "attention_mask": np.array(tokenized["attention_mask"], dtype=np.int64)
-  }
-  return client.predict(inputs=inputs)
+    tokenized = tokenizer(mess, return_tenros="np")
+    inputs = {
+        "input_ids": np.array(tokenized["input_ids"], dtype=np.int64),
+        "token_type_ids": np.array(tokenized["token_type_ids"], dtype=np.int64),
+        "attention_mask": np.array(tokenized["attention_mask"], dtype=np.int64),
+    }
+    return client.predict(model_name="bk", inputs=inputs)
