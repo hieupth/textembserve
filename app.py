@@ -1,4 +1,5 @@
 import os
+import json
 import ovmsclient
 import numpy as np
 from typing import Union
@@ -6,11 +7,11 @@ from fastapi import FastAPI
 from hftokenizer import BertTokenizer, PhobertTokenizer
 
 # Read tokenizer name.
-TOKENIZER = os.getenv("TOKENIZER", "bert")
+TOKENIZER = os.getenv("TOKENIZER", "phobert")
 # Is words segment?
-IS_WORD_SEGMENT = os.getenv("IS_WORD_SEGMENT", False)
+IS_WORD_SEGMENT = os.getenv("IS_WORD_SEGMENT", True)
 # Model path, default is /tokenizer
-MODEL_NAME_OR_PATH = os.getenv("MODEL_NAME", "/tokenizer")
+MODEL_NAME_OR_PATH = os.getenv("MODEL_NAME", "./tokenizer")
 
 # Create bert tokenizer.
 if TOKENIZER.lower() == "bert":
@@ -27,17 +28,17 @@ elif TOKENIZER.lower() == "phobert":
   )
 
 # Make openVINO client
-client = ovmsclient.make_grpc_client(os.getenv("OVMS_URI", "ovms:9000"))
+client = ovmsclient.make_grpc_client(os.getenv("OVMS_URI", "localhost:9000"))
 
 # Make fastapi
 app = FastAPI()
 
 @app.post("/")
-async def predict(mess: str):
-    tokenized = tokenizer(mess, return_tenros="np")
-    inputs = {
-        "input_ids": np.array(tokenized["input_ids"], dtype=np.int64),
-        "token_type_ids": np.array(tokenized["token_type_ids"], dtype=np.int64),
-        "attention_mask": np.array(tokenized["attention_mask"], dtype=np.int64),
-    }
-    return client.predict(model_name="bk", inputs=inputs)
+async def predict(data: dict):
+  tokenized = tokenizer(data["message"])
+  metadata = client.get_model_metadata(data["model"])
+  inputs = dict()
+  for k in metadata["inputs"].keys():
+    inputs.update({k: np.array([tokenized[k]], dtype=np.int64)})
+  res = client.predict(model_name=data["model"], inputs=inputs)
+  return json.dumps(res.squeeze().tolist())

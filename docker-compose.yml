@@ -4,7 +4,7 @@ services:
   bk:
     image: openvino/model_server
     container_name: bk
-    command: --model_name bk --model_path /models/bk
+    command: --model_name bk --model_path /models/bk --port 9000
     volumes:
       - ./models:/models
   bkapi:
@@ -13,9 +13,11 @@ services:
     environment:
       - TOKENIZER=phobert
       - IS_WORD_SEGMENT=True
+      - OVMS_URI="bk:9000"
+      - MODEL_NAME=/tokenizer
     ports:
       - 80:80
     volumes:
       - ./tokenizer:/tokenizer
     links:
-      - bk:ovms
+      - bk:bk
